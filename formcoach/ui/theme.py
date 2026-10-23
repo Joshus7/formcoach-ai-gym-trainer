@@ -60,9 +60,16 @@ def stylesheet(name: str) -> str:
     QPushButton#Nav {{ text-align: left; background: transparent; border: none; padding: 10px 14px;
                        border-radius: 8px; }}
     QPushButton#Nav:checked {{ background: {p.surface2}; color: {p.accent}; }}
-    QPushButton#ExerciseTile {{ background: {p.surface}; border: 2px solid {p.border}; border-radius: 14px;
-                                padding: 12px; text-align: center; }}
-    QPushButton#ExerciseTile:checked {{ border-color: {p.accent}; background: {p.surface2}; }}
+    QToolButton#ExerciseTile {{ background: {p.surface}; border: 2px solid {p.border}; border-radius: 14px;
+                                padding: 12px; font-weight: 600; }}
+    QToolButton#ExerciseTile:hover {{ border-color: {p.muted}; }}
+    QToolButton#ExerciseTile:checked {{ border-color: {p.accent}; background: {p.surface2}; color: {p.accent}; }}
+    QRadioButton::indicator, QCheckBox::indicator {{ width: 16px; height: 16px; border: 2px solid {p.muted};
+        background: {p.surface2}; }}
+    QRadioButton::indicator {{ border-radius: 10px; }}
+    QCheckBox::indicator {{ border-radius: 4px; }}
+    QRadioButton::indicator:checked, QCheckBox::indicator:checked {{ background: {p.accent};
+        border-color: {p.accent}; }}
     QLineEdit, QSpinBox, QDoubleSpinBox, QComboBox {{ background: {p.surface2}; border: 1px solid {p.border};
         border-radius: 8px; padding: 6px 8px; min-height: 22px; }}
     QComboBox QAbstractItemView {{ background: {p.surface}; selection-background-color: {p.accent}; }}
