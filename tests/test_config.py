@@ -31,3 +31,22 @@ def test_merged_is_deep_and_non_destructive():
     out = merged(base, {"a": {"b": 10}})
     assert out == {"a": {"b": 10, "c": 2}, "d": 3}
     assert base["a"]["b"] == 1
+
+
+def test_settings_overrides_reach_the_exercise(tmp_path):
+    from formcoach.core.exercises import create
+    from formcoach.settings import AppSettings
+    s = AppSettings(overrides={"push_up": {"thresholds": {"body_line_max_dev": 25.0},
+                                           "faults": {"not_deep": {"weight": 50}}}})
+    s.save(tmp_path / "settings.json")
+    loaded = AppSettings.load(tmp_path / "settings.json")
+    ex = create("push_up", merged(load_config(), loaded.overrides))
+    assert ex.th["body_line_max_dev"] == 25.0
+    assert ex.faults["not_deep"].weight == 50 and ex.faults["not_deep"].message == "Go lower"
+
+
+def test_corrupt_settings_fall_back_to_defaults(tmp_path):
+    from formcoach.settings import AppSettings
+    p = tmp_path / "settings.json"
+    p.write_text("{not json")
+    assert AppSettings.load(p) == AppSettings()
