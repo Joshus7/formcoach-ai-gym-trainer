@@ -110,6 +110,10 @@ class VideoSource:
         self._index += 1
         return frame
 
+    def shift_clock(self, seconds: float) -> None:
+        """Delay real-time pacing by ``seconds`` (after a pause, so playback doesn't race to catch up)."""
+        self._t0 += seconds
+
     def _index_in_file(self) -> int:
         pos = self.cap.get(cv2.CAP_PROP_POS_FRAMES)
         return int(pos) - 1 if pos else self._index

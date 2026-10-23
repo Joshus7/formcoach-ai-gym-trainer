@@ -65,6 +65,9 @@ class Exercise(ABC):
     joints: tuple[str, ...] = ()       # per-side joints that must be visible
     both_sides: bool = False           # needs left and right (front view exercises)
     extra_points: tuple[int, ...] = ()  # landmarks needed regardless of side
+    # threshold key -> ("max" | "min", rep metric name). "max": fault when metric > threshold,
+    # "min": fault when metric < threshold. Used by tools/tune_thresholds.py.
+    tunable: dict[str, tuple[str, str]] = {}
 
     def __init__(self, cfg: dict, general: dict | None = None):
         self.cfg = cfg
@@ -131,9 +134,20 @@ class Exercise(ABC):
         """Return {fault code: landmark indices to colour red} for this frame."""
         return {}
 
+    def rep_metrics(self, w: RepWindow) -> dict[str, float]:
+        """Scalar summaries of one rep that the thresholds are compared against."""
+        return {}
+
     def extreme_faults(self, w: RepWindow) -> list[str]:
         """Faults judged on the whole rep (depth, lockout, ...)."""
         return []
+
+    def violates(self, metrics: dict[str, float], threshold_key: str) -> bool:
+        kind, name = self.tunable[threshold_key]
+        v, th = metrics.get(name, math.nan), self.th[threshold_key]
+        if math.isnan(v):
+            return False
+        return v > th if kind == "max" else v < th
 
     def reset(self) -> None:
         """Forget per-person calibration (called when the person is lost)."""
@@ -174,6 +188,17 @@ class Exercise(ABC):
     @staticmethod
     def series(frames: list[FrameMetrics], key: str) -> np.ndarray:
         return np.array([f.values.get(key, math.nan) for f in frames], dtype=float)
+
+    def frame_quantile(self, frames: list[FrameMetrics], key: str, absolute: bool = False) -> float:
+        """Value exceeded in ``fault_frame_fraction`` of the frames - matches how per-frame faults
+        become rep faults, so per-frame thresholds can be tuned on it."""
+        s = self.series(frames, key)
+        s = s[~np.isnan(s)]
+        if not len(s):
+            return math.nan
+        if absolute:
+            s = np.abs(s)
+        return float(np.quantile(s, 1 - self.general.get("fault_frame_fraction", 0.3)))
 
     @classmethod
     def peak(cls, frames: list[FrameMetrics], key: str, fn=np.nanmax, default: float = math.nan) -> float:

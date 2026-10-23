@@ -1,4 +1,8 @@
-"""Dumbbell shoulder press, front view. Signal: wrist height above shoulders (torso lengths)."""
+"""Dumbbell shoulder press, front view.
+
+Signal: wrist height above the shoulders in arm lengths (shoulder-elbow + elbow-wrist), which
+reads ~1.0 at full lockout for everyone; torso length varies too much in a front view.
+"""
 from __future__ import annotations
 
 from .. import geometry as g
@@ -21,11 +25,11 @@ class ShoulderPress(Exercise):
         return super().required_indices("left")
 
     def measure(self, lms, side, t):
-        torso = g.torso_length(lms)
         vals = {}
         for s in ("left", "right"):
             sh, el, wr = (self.p(lms, s, j) for j in ("shoulder", "elbow", "wrist"))
-            vals[f"height_{s}"] = g.normalised(sh[1] - wr[1], torso)
+            arm = g.distance(sh, el) + g.distance(el, wr)
+            vals[f"height_{s}"] = g.normalised(sh[1] - wr[1], arm)
             vals[f"elbow_{s}"] = g.angle(sh, el, wr)
         height = (vals["height_left"] + vals["height_right"]) / 2
         vals["height"] = height
@@ -38,11 +42,25 @@ class ShoulderPress(Exercise):
             out["uneven"] = self.joint_ids("left", "wrist", "elbow") + self.joint_ids("right", "wrist", "elbow")
         return out
 
+    tunable = {
+        "lockout_min_elbow": ("min", "lockout_elbow"),
+        "bottom_max_height": ("max", "bottom_height"),
+        "symmetry_max_diff": ("max", "asymmetry"),
+    }
+
+    def rep_metrics(self, w: RepWindow):
+        return {
+            "lockout_elbow": min(self.peak(w.frames, "elbow_left", max, 0.0),
+                                 self.peak(w.frames, "elbow_right", max, 0.0)),
+            "bottom_height": w.event.start_peak,
+            "asymmetry": self.frame_quantile(w.frames, "asymmetry"),
+        }
+
     def extreme_faults(self, w: RepWindow):
+        m = self.rep_metrics(w)
         faults = []
-        lock = min(self.peak(w.frames, "elbow_left", max, 0.0), self.peak(w.frames, "elbow_right", max, 0.0))
-        if w.event.partial or lock < self.th["lockout_min_elbow"]:
+        if w.event.partial or self.violates(m, "lockout_min_elbow"):
             faults.append("no_lockout")
-        if w.event.start_peak > self.th["bottom_max_height"]:
+        if self.violates(m, "bottom_max_height"):
             faults.append("not_low")
         return faults

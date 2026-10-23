@@ -110,11 +110,30 @@ def print_table(report: dict) -> None:
               f"{ra:>8s} {fa:>9s} {s['good_correct']:>3d}/{s['good_total']:<4d} {s['bad_correct']:>3d}/{s['bad_total']}")
 
 
+def write_markdown(report: dict, path: Path) -> None:
+    lines = ["# Evaluation on the dataset", "",
+             "Full engine (smoothing, rep state machine, form rules, scoring) run over every cached clip by "
+             "`tools/evaluate.py`. Expected counts: `scipy.signal.find_peaks` reference "
+             "(`tools/reference_counts.py`). Form: a clip is predicted *bad* when at least half of its reps "
+             "have a fault; labels come from the dataset filenames. All subjects are included here - see "
+             "`reports/tuning.md` for held-out-subject numbers.", "",
+             "| exercise | clips | exact count | within +-1 | MAE | rep-count accuracy | good clips correct "
+             "| bad clips correct | form accuracy |", "|---|---|---|---|---|---|---|---|---|"]
+    for ex, r in report.items():
+        s = r["summary"]
+        lines.append(f"| {ex} | {s['clips']} | {s['count_exact']} | {s['count_within_1']} | {s['count_mae']:.2f} | "
+                     f"{s['rep_count_accuracy']:.1%} | {s['good_correct']}/{s['good_total']} | "
+                     f"{s['bad_correct']}/{s['bad_total']} | {s['form_accuracy']:.0%} |")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("\n".join(lines) + "\n")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--exercise", choices=sorted(EXERCISES), action="append")
     ap.add_argument("--verbose", action="store_true")
     ap.add_argument("--json", type=Path, help="also write the full report here")
+    ap.add_argument("--markdown", type=Path, help="also write a summary table here (e.g. reports/evaluation.md)")
     args = ap.parse_args()
     report = evaluate(args.exercise or list(EXERCISES), load_config(), args.verbose)
     if not report:
@@ -124,6 +143,8 @@ def main() -> None:
     if args.json:
         args.json.parent.mkdir(parents=True, exist_ok=True)
         args.json.write_text(json.dumps(report, indent=1))
+    if args.markdown:
+        write_markdown(report, args.markdown)
 
 
 if __name__ == "__main__":

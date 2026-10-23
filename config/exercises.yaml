@@ -24,53 +24,53 @@ push_up:
   counter: {start: 85, turn: 70, hysteresis: 3, min_rep_s: 0.3, partial_range: 12}
   thresholds:
     calibration_window_s: 6
-    depth_max_height_pct: 60     # shoulders must drop to at most this % ...
-    depth_max_elbow: 90          # ... or the elbow must bend to at most this
-    lockout_min_elbow: 160       # and straighten to at least this
-    body_line_max_dev: 15        # shoulder-hip-ankle may bend at most this
+    depth_max_height_pct: 51.0     # shoulders must drop to at most this % ...
+    depth_max_elbow: 107.0          # ... or the elbow must bend to at most this
+    lockout_min_elbow: 153.0       # and straighten to at least this
+    body_line_max_dev: 11.0        # shoulder-hip-ankle may bend at most this
   faults:
-    not_deep: {weight: 35, major: true, message: "Go lower"}
-    no_lockout: {weight: 20, message: "Straighten your arms"}
-    hips_out_of_line: {weight: 30, live: true, message: "Keep your hips in line"}
+    not_deep: {weight: 35, major: true, message: Go lower}
+    no_lockout: {weight: 20, message: Straighten your arms}
+    hips_out_of_line: {weight: 30, live: true, message: Keep your hips in line}
 
 squat:
-  counter: {start: 155, turn: 125, hysteresis: 5, min_rep_s: 0.6, partial_range: 25}
+  counter: {start: 134.0, turn: 105.0, hysteresis: 5, min_rep_s: 0.6, partial_range: 25}
   thresholds:
-    depth_min_hip_below_knee: -0.05   # hip y minus knee y (torso lengths); >= 0 = hip at/below knee
-    depth_max_knee: 100
-    lockout_min_knee: 165
-    torso_lean_max: 50                # torso angle from vertical
-    knee_past_toe_max: 0.35           # knee ahead of toes (torso lengths)
+    depth_min_hip_below_knee: -0.31   # hip y minus knee y (torso lengths); >= 0 = hip at/below knee
+    depth_max_knee: 86.0
+    lockout_min_knee: 144.0
+    torso_lean_max: 63.0                # torso angle from vertical
+    knee_past_toe_max: 0.23           # knee ahead of toes (torso lengths)
   faults:
-    not_deep: {weight: 35, major: true, message: "Squat deeper - hips to knee level"}
-    no_lockout: {weight: 15, message: "Stand all the way up"}
-    torso_lean: {weight: 25, live: true, message: "Keep your chest up"}
-    knees_forward: {weight: 20, live: true, message: "Keep your knees behind your toes"}
+    not_deep: {weight: 35, major: true, message: Squat deeper - hips to knee level}
+    no_lockout: {weight: 15, message: Stand all the way up}
+    torso_lean: {weight: 25, live: true, message: Keep your chest up}
+    knees_forward: {weight: 20, live: true, message: Keep your knees behind your toes}
 
 bicep_curl:
   counter: {start: 130, turn: 75, hysteresis: 5, min_rep_s: 0.5, partial_range: 30}
   thresholds:
-    top_max_elbow: 45            # curl until the elbow is at most this
-    bottom_min_elbow: 150        # extend until the elbow is at least this
-    upper_arm_max_swing: 25      # upper arm angle from hanging straight down
-    body_swing_max: 12           # torso lean change from the start of the rep
+    top_max_elbow: 70.0            # curl until the elbow is at most this
+    bottom_min_elbow: 147.0        # extend until the elbow is at least this
+    upper_arm_max_swing: 21.0      # upper arm angle from hanging straight down
+    body_swing_max: 4.97           # torso lean change from the start of the rep
   faults:
-    not_full_curl: {weight: 30, major: true, message: "Curl all the way up"}
-    no_extension: {weight: 20, message: "Fully extend your arm"}
-    elbow_drift: {weight: 25, live: true, message: "Keep your upper arm still"}
-    body_swing: {weight: 25, message: "Don't swing your body"}
+    not_full_curl: {weight: 30, major: true, message: Curl all the way up}
+    no_extension: {weight: 20, message: Fully extend your arm}
+    elbow_drift: {weight: 25, live: true, message: Keep your upper arm still}
+    body_swing: {weight: 25, message: Don't swing your body}
 
 shoulder_press:
-  # signal = wrist height above the shoulders, in torso lengths
-  counter: {start: 0.35, turn: 0.8, direction: increasing, hysteresis: 0.05, min_rep_s: 0.6, partial_range: 0.3}
+  # signal = wrist height above the shoulders, in arm lengths (1.0 = arms locked out overhead)
+  counter: {start: 0.5, turn: 0.85, direction: increasing, hysteresis: 0.05, min_rep_s: 0.6, partial_range: 0.2}
   thresholds:
-    lockout_min_elbow: 155       # both elbows at least this at the top
-    bottom_max_height: 0.25      # wrists back down to shoulder level between reps
-    symmetry_max_diff: 0.2       # left/right wrist height difference
+    lockout_min_elbow: 152.0       # both elbows at least this at the top
+    bottom_max_height: 0.4      # wrists back down to shoulder level between reps
+    symmetry_max_diff: 0.09       # left/right wrist height difference
   faults:
-    no_lockout: {weight: 35, major: true, message: "Press all the way up"}
-    not_low: {weight: 15, message: "Lower to shoulder level"}
-    uneven: {weight: 25, live: true, message: "Press evenly with both arms"}
+    no_lockout: {weight: 35, major: true, message: Press all the way up}
+    not_low: {weight: 15, message: Lower to shoulder level}
+    uneven: {weight: 25, live: true, message: Press evenly with both arms}
 
 pull_up:
   counter: {start: 140, turn: 100, hysteresis: 5, min_rep_s: 0.8, partial_range: 25}
@@ -79,6 +79,6 @@ pull_up:
     chin_min_above_wrist: 0.0    # nose above the wrists (torso lengths) at the top
     kipping_max_hip_range: 0.35  # side-to-side / back-and-forth hip travel during a rep
   faults:
-    chin_not_over: {weight: 40, major: true, message: "Get your chin over the bar"}
-    no_full_hang: {weight: 20, message: "Start from a full hang"}
-    kipping: {weight: 30, message: "Avoid kipping - control the swing"}
+    chin_not_over: {weight: 40, major: true, message: Get your chin over the bar}
+    no_full_hang: {weight: 20, message: Start from a full hang}
+    kipping: {weight: 30, message: Avoid kipping - control the swing}

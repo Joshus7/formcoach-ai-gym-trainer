@@ -1,13 +1,33 @@
 {
+ "bicep_curl__bad__subject_001_bicep_curl_bad_side": {
+  "exercise": "bicep_curl",
+  "label": "bad",
+  "reps": 3
+ },
+ "bicep_curl__bad__subject_026_bicep_curl_bad_side": {
+  "exercise": "bicep_curl",
+  "label": "bad",
+  "reps": 4
+ },
+ "bicep_curl__good__subject_001_bicep_curl_good_side": {
+  "exercise": "bicep_curl",
+  "label": "good",
+  "reps": 4
+ },
+ "bicep_curl__good__subject_026_bicep_curl_good_side": {
+  "exercise": "bicep_curl",
+  "label": "good",
+  "reps": 3
+ },
  "push_up__bad__subject_001_push_up_bad_side": {
   "exercise": "push_up",
   "label": "bad",
   "reps": 10
  },
- "push_up__bad__subject_008_push_up_bad_side": {
+ "push_up__bad__subject_024_push_up_bad_side": {
   "exercise": "push_up",
   "label": "bad",
-  "reps": 7
+  "reps": 6
  },
  "push_up__good__subject_001_push_up_good_side": {
   "exercise": "push_up",
@@ -18,5 +38,45 @@
   "exercise": "push_up",
   "label": "good",
   "reps": 9
+ },
+ "shoulder_press__bad__subject_001_shoulder_bad_front": {
+  "exercise": "shoulder_press",
+  "label": "bad",
+  "reps": 0
+ },
+ "shoulder_press__bad__subject_026_shoulder_bad_front": {
+  "exercise": "shoulder_press",
+  "label": "bad",
+  "reps": 8
+ },
+ "shoulder_press__good__subject_001_shoulder_good_front": {
+  "exercise": "shoulder_press",
+  "label": "good",
+  "reps": 6
+ },
+ "shoulder_press__good__subject_026_shoulder_good_front": {
+  "exercise": "shoulder_press",
+  "label": "good",
+  "reps": 5
+ },
+ "squat__bad__subject_001_squat_bad_side": {
+  "exercise": "squat",
+  "label": "bad",
+  "reps": 7
+ },
+ "squat__bad__subject_026_squat_bad_side": {
+  "exercise": "squat",
+  "label": "bad",
+  "reps": 6
+ },
+ "squat__good__subject_001_squat_good_side": {
+  "exercise": "squat",
+  "label": "good",
+  "reps": 9
+ },
+ "squat__good__subject_026_squat_good_side": {
+  "exercise": "squat",
+  "label": "good",
+  "reps": 6
  }
 }

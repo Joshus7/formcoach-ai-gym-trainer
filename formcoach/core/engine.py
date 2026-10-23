@@ -51,7 +51,7 @@ class WorkoutEngine:
 
     def __init__(self, exercise_key: str, config: dict, target_reps: int | None = None,
                  target_sets: int | None = None, countdown_s: float | None = None,
-                 user_id: int | None = None, source: str = ""):
+                 user_id: int | None = None, source: str = "", keep_windows: bool = False):
         self.config = config
         general = config.get("general", {})
         self.exercise = exercises.create(exercise_key, config)
@@ -78,6 +78,8 @@ class WorkoutEngine:
         self._last_message: Message | None = None
         self._message_until = 0.0
         self._started = self.countdown_s <= 0
+        self.keep_windows = keep_windows
+        self.windows: list[RepWindow] = []   # filled when keep_windows=True (threshold tuning)
 
     # ------------------------------------------------------------------ public
     def process(self, landmarks: np.ndarray | None, t: float) -> EngineOutput:
@@ -155,8 +157,10 @@ class WorkoutEngine:
         set_done = False
         message = self.feedback.live(set(frame_faults), t)
         if event is not None:
-            faults = self.exercise.rep_faults(
-                RepWindow(event, self._rep_frames, self._rep_lead_in, self._rep_fault_log))
+            window = RepWindow(event, self._rep_frames, self._rep_lead_in, self._rep_fault_log)
+            if self.keep_windows:
+                self.windows.append(window)
+            faults = self.exercise.rep_faults(window)
             score, valid = self.exercise.score(faults)
             new_rep = RepResult(
                 index=len(self.session.reps) + 1, score=score, faults=faults, valid=valid,

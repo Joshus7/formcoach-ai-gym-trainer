@@ -25,6 +25,7 @@ import os
 import shutil
 import subprocess
 import sys
+import time
 import zipfile
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -60,19 +61,28 @@ def human(n: float) -> str:
     return f"{n:.1f} TB"
 
 
-def download_file(url: str, dest: Path, expected_size: int | None = None) -> bool:
-    """Download url to dest. Returns True if downloaded, False if skipped."""
+def download_file(url: str, dest: Path, expected_size: int | None = None, retries: int = 3) -> bool:
+    """Download url to dest. Returns True if downloaded, False if skipped.
+
+    The file is written to a .part file first and only renamed when its size matches
+    (Mendeley occasionally answers with a short JSON error instead of the file).
+    """
     if dest.exists() and (expected_size is None or dest.stat().st_size == expected_size):
         return False
     dest.parent.mkdir(parents=True, exist_ok=True)
     tmp = dest.with_suffix(dest.suffix + ".part")
-    with requests.get(url, stream=True, timeout=120) as r:
-        r.raise_for_status()
-        with open(tmp, "wb") as fh:
-            for chunk in r.iter_content(chunk_size=1 << 20):
-                fh.write(chunk)
-    tmp.replace(dest)
-    return True
+    for attempt in range(1, retries + 1):
+        with requests.get(url, stream=True, timeout=120) as r:
+            r.raise_for_status()
+            with open(tmp, "wb") as fh:
+                for chunk in r.iter_content(chunk_size=1 << 20):
+                    fh.write(chunk)
+        if expected_size is None or tmp.stat().st_size == expected_size:
+            tmp.replace(dest)
+            return True
+        time.sleep(2 * attempt)
+    tmp.unlink(missing_ok=True)
+    raise requests.RequestException(f"size mismatch after {retries} attempts")
 
 
 # --------------------------------------------------------------------------- Mendeley

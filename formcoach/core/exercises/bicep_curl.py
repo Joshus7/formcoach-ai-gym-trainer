@@ -29,14 +29,30 @@ class BicepCurl(Exercise):
             out["elbow_drift"] = self.joint_ids(m.side, "elbow", "shoulder")
         return out
 
-    def extreme_faults(self, w: RepWindow):
-        faults = []
-        if w.event.partial or w.event.extreme > self.th["top_max_elbow"]:
-            faults.append("not_full_curl")
-        if w.event.start_peak < self.th["bottom_min_elbow"]:
-            faults.append("no_extension")
+    tunable = {
+        "top_max_elbow": ("max", "min_elbow"),
+        "bottom_min_elbow": ("min", "extension_elbow"),
+        "upper_arm_max_swing": ("max", "upper_arm"),
+        "body_swing_max": ("max", "body_swing"),
+    }
+
+    def rep_metrics(self, w: RepWindow):
         lean = self.series(w.lead_in[-3:] + w.frames, "torso_lean")
         lean = lean[~np.isnan(lean)]
-        if len(lean) > 1 and (lean.max() - lean[0]) > self.th["body_swing_max"]:
+        return {
+            "min_elbow": w.event.extreme,
+            "extension_elbow": w.event.start_peak,
+            "upper_arm": self.frame_quantile(w.frames, "upper_arm"),
+            "body_swing": float(lean.max() - lean[0]) if len(lean) > 1 else 0.0,
+        }
+
+    def extreme_faults(self, w: RepWindow):
+        m = self.rep_metrics(w)
+        faults = []
+        if w.event.partial or self.violates(m, "top_max_elbow"):
+            faults.append("not_full_curl")
+        if self.violates(m, "bottom_min_elbow"):
+            faults.append("no_extension")
+        if self.violates(m, "body_swing_max"):
             faults.append("body_swing")
         return faults

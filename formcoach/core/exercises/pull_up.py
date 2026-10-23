@@ -39,13 +39,28 @@ class PullUp(Exercise):
         }
         return self.metrics(t, elbow, vals, side)
 
-    def extreme_faults(self, w: RepWindow):
-        faults = []
-        if w.event.partial or self.peak(w.frames, "chin_above_wrist", max, -1.0) < self.th["chin_min_above_wrist"]:
-            faults.append("chin_not_over")
-        if w.event.start_peak < self.th["hang_min_elbow"]:
-            faults.append("no_full_hang")
+    tunable = {
+        "chin_min_above_wrist": ("min", "chin_above_wrist"),
+        "hang_min_elbow": ("min", "hang_elbow"),
+        "kipping_max_hip_range": ("max", "hip_range"),
+    }
+
+    def rep_metrics(self, w: RepWindow):
         hip = self.series(w.frames, "hip_x")
-        if np.sum(~np.isnan(hip)) > 2 and np.nanmax(hip) - np.nanmin(hip) > self.th["kipping_max_hip_range"]:
+        hip = hip[~np.isnan(hip)]
+        return {
+            "chin_above_wrist": self.peak(w.frames, "chin_above_wrist", max, -1.0),
+            "hang_elbow": w.event.start_peak,
+            "hip_range": float(hip.max() - hip.min()) if len(hip) > 2 else 0.0,
+        }
+
+    def extreme_faults(self, w: RepWindow):
+        m = self.rep_metrics(w)
+        faults = []
+        if w.event.partial or self.violates(m, "chin_min_above_wrist"):
+            faults.append("chin_not_over")
+        if self.violates(m, "hang_min_elbow"):
+            faults.append("no_full_hang")
+        if self.violates(m, "kipping_max_hip_range"):
             faults.append("kipping")
         return faults

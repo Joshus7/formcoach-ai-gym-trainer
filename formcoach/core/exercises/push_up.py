@@ -46,14 +46,27 @@ class PushUp(Exercise):
             out["hips_out_of_line"] = self.joint_ids(m.side, "hip", "shoulder", "ankle")
         return out
 
+    tunable = {
+        "depth_max_height_pct": ("max", "bottom_height_pct"),
+        "depth_max_elbow": ("max", "min_elbow"),
+        "lockout_min_elbow": ("min", "lockout_elbow"),
+        "body_line_max_dev": ("max", "body_line_dev"),
+    }
+
+    def rep_metrics(self, w: RepWindow):
+        return {
+            "bottom_height_pct": w.event.extreme,
+            "min_elbow": self.peak(w.frames, "elbow", min, 180.0),
+            "lockout_elbow": self.peak(w.lead_in + w.frames[:2], "elbow", max, 180.0),
+            "body_line_dev": self.frame_quantile(w.frames, "body_line", absolute=True),
+        }
+
     def extreme_faults(self, w: RepWindow):
+        m = self.rep_metrics(w)
         faults = []
-        min_elbow = self.peak(w.frames, "elbow", min, 180.0)
-        # Deep enough if the elbow bends far enough or the shoulders drop far enough.
-        if w.event.partial or (min_elbow > self.th["depth_max_elbow"]
-                               and w.event.extreme > self.th["depth_max_height_pct"]):
+        # Deep enough if the shoulders drop far enough or the elbow bends far enough.
+        if w.event.partial or (self.violates(m, "depth_max_height_pct") and self.violates(m, "depth_max_elbow")):
             faults.append("not_deep")
-        lockout = self.peak(w.lead_in + w.frames[:2], "elbow", max, 180.0)
-        if lockout < self.th["lockout_min_elbow"]:
+        if self.violates(m, "lockout_min_elbow"):
             faults.append("no_lockout")
         return faults
