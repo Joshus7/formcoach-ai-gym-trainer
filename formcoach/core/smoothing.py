@@ -69,3 +69,29 @@ class LandmarkSmoother:
         out = lms.astype(float).copy()
         out[:, :3] = self._filter(lms[:, :3], t)
         return out
+
+
+class RollingPercentile:
+    """Percentile of a signal over the last ``window_s`` seconds.
+
+    Used as a self-calibrating reference, e.g. "how high are this person's shoulders
+    when their arms are straight", which absorbs camera angle and body size.
+    """
+
+    def __init__(self, window_s: float = 6.0, q: float = 90.0):
+        self.window_s = window_s
+        self.q = q
+        self._t: list[float] = []
+        self._v: list[float] = []
+
+    def reset(self) -> None:
+        self._t, self._v = [], []
+
+    def __call__(self, value: float, t: float) -> float:
+        if not np.isnan(value):
+            self._t.append(t)
+            self._v.append(value)
+        while self._t and t - self._t[0] > self.window_s:
+            self._t.pop(0)
+            self._v.pop(0)
+        return float(np.percentile(self._v, self.q)) if self._v else float("nan")

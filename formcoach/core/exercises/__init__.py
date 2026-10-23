@@ -1,7 +1,7 @@
 """Exercise registry."""
 from __future__ import annotations
 
-from .base import Exercise, FaultSpec, FrameMetrics, RepResult
+from .base import Exercise, FaultSpec, FrameMetrics, RepResult, RepWindow
 from .bicep_curl import BicepCurl
 from .pull_up import PullUp
 from .push_up import PushUp
@@ -20,4 +20,4 @@ def create(key: str, config: dict) -> Exercise:
     return EXERCISES[key](config[key], config.get("general", {}))
 
 
-__all__ = ["EXERCISES", "Exercise", "FaultSpec", "FrameMetrics", "RepResult", "create"]
+__all__ = ["EXERCISES", "Exercise", "FaultSpec", "FrameMetrics", "RepResult", "RepWindow", "create"]

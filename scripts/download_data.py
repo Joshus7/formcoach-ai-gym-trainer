@@ -26,6 +26,7 @@ import shutil
 import subprocess
 import sys
 import zipfile
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import requests
@@ -96,7 +97,7 @@ def mendeley_files(folder_id: str) -> list[dict]:
     return requests.get(url, timeout=60).json()
 
 
-def download_mendeley(max_per_folder: int | None) -> None:
+def download_mendeley(max_per_folder: int | None, workers: int = 8) -> None:
     print("== Mendeley: Multi-View Fitness Exercise Video Dataset (CC BY 4.0)")
     try:
         folders = mendeley_folders()
@@ -118,18 +119,20 @@ def download_mendeley(max_per_folder: int | None) -> None:
             out_dir = RAW / "mendeley" / exercise / quality / view
             size = sum(f["size"] for f in files)
             print(f"-- {exercise}/{quality}/{view}: {len(files)} videos ({human(size)})")
-            for i, f in enumerate(files, 1):
+            def fetch(f: dict) -> tuple[str, str]:
                 dest = out_dir / f["filename"]
-                url = f["content_details"]["download_url"]
                 try:
-                    new = download_file(url, dest, f["size"])
+                    new = download_file(f["content_details"]["download_url"], dest, f["size"])
                 except requests.RequestException as exc:
-                    print(f"   [{i}/{len(files)}] FAILED {f['filename']}: {exc}")
-                    continue
-                total_new += new
-                total_skip += not new
-                status = "downloaded" if new else "exists, skipped"
-                print(f"   [{i}/{len(files)}] {f['filename']} ({status})", flush=True)
+                    return f["filename"], f"FAILED: {exc}"
+                return f["filename"], "downloaded" if new else "exists, skipped"
+
+            # Mendeley serves each file slowly, so several downloads run in parallel.
+            with ThreadPoolExecutor(max_workers=workers) as pool:
+                for i, (name, status) in enumerate(pool.map(fetch, files), 1):
+                    total_new += status == "downloaded"
+                    total_skip += status.startswith("exists")
+                    print(f"   [{i}/{len(files)}] {name} ({status})", flush=True)
     print(f"== Mendeley done: {total_new} downloaded, {total_skip} already present\n")
 
 
@@ -210,10 +213,11 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--only", choices=["mendeley", "kaggle"], help="download only one source")
     ap.add_argument("--max-per-folder", type=int, default=None, help="limit videos per class/quality folder")
+    ap.add_argument("--workers", type=int, default=8, help="parallel downloads")
     args = ap.parse_args()
     RAW.mkdir(parents=True, exist_ok=True)
     if args.only in (None, "mendeley"):
-        download_mendeley(args.max_per_folder)
+        download_mendeley(args.max_per_folder, args.workers)
     if args.only in (None, "kaggle"):
         download_kaggle(args.max_per_folder)
 

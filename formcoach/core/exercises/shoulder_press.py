@@ -1,11 +1,8 @@
 """Dumbbell shoulder press, front view. Signal: wrist height above shoulders (torso lengths)."""
 from __future__ import annotations
 
-import numpy as np
-
-from ... import geometry as g
-from ..rep_counter import RepEvent
-from .base import Exercise
+from .. import geometry as g
+from .base import Exercise, RepWindow
 
 
 class ShoulderPress(Exercise):
@@ -41,12 +38,11 @@ class ShoulderPress(Exercise):
             out["uneven"] = self.joint_ids("left", "wrist", "elbow") + self.joint_ids("right", "wrist", "elbow")
         return out
 
-    def extreme_faults(self, event: RepEvent, frames):
+    def extreme_faults(self, w: RepWindow):
         faults = []
-        lock = min(np.nanmax(self.series(frames, "elbow_left")), np.nanmax(self.series(frames, "elbow_right"))) \
-            if frames else 0.0
-        if event.partial or lock < self.th["lockout_min_elbow"]:
+        lock = min(self.peak(w.frames, "elbow_left", max, 0.0), self.peak(w.frames, "elbow_right", max, 0.0))
+        if w.event.partial or lock < self.th["lockout_min_elbow"]:
             faults.append("no_lockout")
-        if event.start_peak > self.th["bottom_max_height"]:
+        if w.event.start_peak > self.th["bottom_max_height"]:
             faults.append("not_low")
         return faults

@@ -91,7 +91,14 @@ def main() -> None:
             skipped += 1
             continue
         t0 = time.perf_counter()
-        data = extract(clip)
+        try:
+            data = extract(clip)
+        except Exception as exc:  # unreadable / truncated video
+            print(f"[{i}/{len(clips)}] {ex}: {clip.name} FAILED ({exc}), skipped")
+            continue
+        if len(data["timestamps"]) == 0:
+            print(f"[{i}/{len(clips)}] {ex}: {clip.name} has no frames (corrupt or incomplete), skipped")
+            continue
         out.parent.mkdir(parents=True, exist_ok=True)
         np.savez_compressed(out, **data)
         n = len(data["timestamps"])

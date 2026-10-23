@@ -36,6 +36,15 @@ class FaultSpec:
 
 
 @dataclass
+class RepWindow:
+    """Everything the exercise needs to judge one finished rep."""
+    event: RepEvent
+    frames: list[FrameMetrics]                 # frames during the rep
+    lead_in: list[FrameMetrics]                # start-position frames just before the rep
+    fault_log: list[set[str]]                  # per-frame faults during the rep
+
+
+@dataclass
 class RepResult:
     index: int                 # 1-based, counts no-reps too
     score: int
@@ -122,19 +131,21 @@ class Exercise(ABC):
         """Return {fault code: landmark indices to colour red} for this frame."""
         return {}
 
-    def extreme_faults(self, event: RepEvent, frames: list[FrameMetrics]) -> list[str]:
+    def extreme_faults(self, w: RepWindow) -> list[str]:
         """Faults judged on the whole rep (depth, lockout, ...)."""
         return []
 
+    def reset(self) -> None:
+        """Forget per-person calibration (called when the person is lost)."""
+
     # ------------------------------------------------------------------ scoring
-    def rep_faults(self, event: RepEvent, frames: list[FrameMetrics],
-                   frame_fault_log: list[set[str]]) -> list[str]:
-        faults = list(self.extreme_faults(event, frames))
+    def rep_faults(self, w: RepWindow) -> list[str]:
+        faults = list(self.extreme_faults(w))
         frac = self.general.get("fault_frame_fraction", 0.3)
-        if frame_fault_log:
-            n = len(frame_fault_log)
+        if w.fault_log:
+            n = len(w.fault_log)
             for code in self.faults:
-                share = sum(code in s for s in frame_fault_log) / n
+                share = sum(code in s for s in w.fault_log) / n
                 if share >= frac and code not in faults:
                     faults.append(code)
         return faults
@@ -163,3 +174,10 @@ class Exercise(ABC):
     @staticmethod
     def series(frames: list[FrameMetrics], key: str) -> np.ndarray:
         return np.array([f.values.get(key, math.nan) for f in frames], dtype=float)
+
+    @classmethod
+    def peak(cls, frames: list[FrameMetrics], key: str, fn=np.nanmax, default: float = math.nan) -> float:
+        """fn (nanmax / nanmin) of a value over frames, or default if there is no data."""
+        fn = {max: np.nanmax, min: np.nanmin}.get(fn, fn)
+        s = cls.series(frames, key)
+        return float(fn(s)) if np.any(~np.isnan(s)) else default

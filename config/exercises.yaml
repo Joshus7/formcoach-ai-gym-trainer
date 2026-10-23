@@ -20,9 +20,12 @@ general:
   one_euro: {min_cutoff: 1.5, beta: 0.02, d_cutoff: 1.0}
 
 push_up:
-  counter: {start: 145, turn: 110, hysteresis: 5, min_rep_s: 0.5, partial_range: 25}
+  # signal = shoulder height above the wrist, % of the person's own arms-straight height
+  counter: {start: 85, turn: 70, hysteresis: 3, min_rep_s: 0.3, partial_range: 12}
   thresholds:
-    depth_max_elbow: 90          # elbow must bend to at most this
+    calibration_window_s: 6
+    depth_max_height_pct: 60     # shoulders must drop to at most this % ...
+    depth_max_elbow: 90          # ... or the elbow must bend to at most this
     lockout_min_elbow: 160       # and straighten to at least this
     body_line_max_dev: 15        # shoulder-hip-ankle may bend at most this
   faults:

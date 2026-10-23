@@ -1,11 +1,10 @@
-"""Bicep curl (dumbbell, one or alternating arms), side view. Signal: elbow angle."""
+"""Bicep curl (dumbbell), side view. Signal: elbow angle of the arm nearest the camera."""
 from __future__ import annotations
 
 import numpy as np
 
-from ... import geometry as g
-from ..rep_counter import RepEvent
-from .base import Exercise
+from .. import geometry as g
+from .base import Exercise, RepWindow
 
 
 class BicepCurl(Exercise):
@@ -30,15 +29,14 @@ class BicepCurl(Exercise):
             out["elbow_drift"] = self.joint_ids(m.side, "elbow", "shoulder")
         return out
 
-    def extreme_faults(self, event: RepEvent, frames):
+    def extreme_faults(self, w: RepWindow):
         faults = []
-        if event.partial or event.extreme > self.th["top_max_elbow"]:
+        if w.event.partial or w.event.extreme > self.th["top_max_elbow"]:
             faults.append("not_full_curl")
-        if event.start_peak < self.th["bottom_min_elbow"]:
+        if w.event.start_peak < self.th["bottom_min_elbow"]:
             faults.append("no_extension")
-        lean = self.series(frames, "torso_lean")
+        lean = self.series(w.lead_in[-3:] + w.frames, "torso_lean")
         lean = lean[~np.isnan(lean)]
-        if len(lean) and (lean.max() - lean[0]) > self.th["body_swing_max"]:
+        if len(lean) > 1 and (lean.max() - lean[0]) > self.th["body_swing_max"]:
             faults.append("body_swing")
         return faults
-

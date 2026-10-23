@@ -3,10 +3,9 @@ from __future__ import annotations
 
 import numpy as np
 
-from ... import geometry as g
-from ... import landmarks as L
-from ..rep_counter import RepEvent
-from .base import Exercise
+from .. import geometry as g
+from .. import landmarks as L
+from .base import Exercise, RepWindow
 
 
 class PullUp(Exercise):
@@ -40,14 +39,13 @@ class PullUp(Exercise):
         }
         return self.metrics(t, elbow, vals, side)
 
-    def extreme_faults(self, event: RepEvent, frames):
+    def extreme_faults(self, w: RepWindow):
         faults = []
-        chin = np.nanmax(self.series(frames, "chin_above_wrist")) if frames else -1.0
-        if event.partial or chin < self.th["chin_min_above_wrist"]:
+        if w.event.partial or self.peak(w.frames, "chin_above_wrist", max, -1.0) < self.th["chin_min_above_wrist"]:
             faults.append("chin_not_over")
-        if event.start_peak < self.th["hang_min_elbow"]:
+        if w.event.start_peak < self.th["hang_min_elbow"]:
             faults.append("no_full_hang")
-        hip = self.series(frames, "hip_x")
+        hip = self.series(w.frames, "hip_x")
         if np.sum(~np.isnan(hip)) > 2 and np.nanmax(hip) - np.nanmin(hip) > self.th["kipping_max_hip_range"]:
             faults.append("kipping")
         return faults

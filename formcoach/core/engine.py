@@ -5,13 +5,14 @@ results, cached landmark files (evaluation) or synthetic data (tests).
 """
 from __future__ import annotations
 
+from collections import deque
 from dataclasses import dataclass, field
 from enum import Enum
 
 import numpy as np
 
 from . import exercises
-from .exercises.base import FrameMetrics, RepResult
+from .exercises.base import FrameMetrics, RepResult, RepWindow
 from .feedback import FeedbackManager, Message
 from .rep_counter import Phase
 from .session import Session
@@ -70,6 +71,8 @@ class WorkoutEngine:
         self._last_ok_t: float | None = None
         self._rep_frames: list[FrameMetrics] = []
         self._rep_fault_log: list[set[str]] = []
+        self._lead_in: deque[FrameMetrics] = deque(maxlen=45)   # ~1.5 s of start-position frames
+        self._rep_lead_in: list[FrameMetrics] = []
         self._set_number = 1
         self._reps_in_set = 0
         self._last_message: Message | None = None
@@ -111,6 +114,8 @@ class WorkoutEngine:
         if self.counter.in_rep:
             self._abandon_rep()
         self.counter.reset()
+        self.exercise.reset()
+        self._lead_in.clear()
         self._countdown_start = None
         self.state = state
         msg = Message(self.exercise.visibility_message(lms if state != State.NO_POSE else None), "info")
@@ -135,17 +140,23 @@ class WorkoutEngine:
         m = self.exercise.measure(lms, side, t)
         frame_faults = self.exercise.frame_faults(m, self.counter.in_rep)
         bad = {j for joints in frame_faults.values() for j in joints}
+        was_in_rep = self.counter.in_rep
         event = self.counter.update(m.signal, t)
 
+        if self.counter.in_rep and not was_in_rep:
+            self._rep_lead_in = list(self._lead_in)
         if self.counter.in_rep or event is not None:
             self._rep_frames.append(m)
             self._rep_fault_log.append(set(frame_faults))
+        else:
+            self._lead_in.append(m)
 
         new_rep = None
         set_done = False
         message = self.feedback.live(set(frame_faults), t)
         if event is not None:
-            faults = self.exercise.rep_faults(event, self._rep_frames, self._rep_fault_log)
+            faults = self.exercise.rep_faults(
+                RepWindow(event, self._rep_frames, self._rep_lead_in, self._rep_fault_log))
             score, valid = self.exercise.score(faults)
             new_rep = RepResult(
                 index=len(self.session.reps) + 1, score=score, faults=faults, valid=valid,
@@ -157,6 +168,8 @@ class WorkoutEngine:
                 self._reps_in_set += 1
             message = self.feedback.for_rep(new_rep, t, self._reps_in_set)
             self._rep_frames, self._rep_fault_log = [], []
+            self._lead_in.clear()
+            self._lead_in.append(m)
             if self.target_reps and self._reps_in_set >= self.target_reps:
                 set_done = True
                 self._complete_set()

@@ -1,0 +1,22 @@
+{
+ "push_up__bad__subject_001_push_up_bad_side": {
+  "exercise": "push_up",
+  "label": "bad",
+  "reps": 10
+ },
+ "push_up__bad__subject_008_push_up_bad_side": {
+  "exercise": "push_up",
+  "label": "bad",
+  "reps": 7
+ },
+ "push_up__good__subject_001_push_up_good_side": {
+  "exercise": "push_up",
+  "label": "good",
+  "reps": 7
+ },
+ "push_up__good__subject_024_push_up_good_side": {
+  "exercise": "push_up",
+  "label": "good",
+  "reps": 9
+ }
+}

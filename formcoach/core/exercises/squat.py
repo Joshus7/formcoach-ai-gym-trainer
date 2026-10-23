@@ -1,11 +1,8 @@
 """Bodyweight squat, side view. Signal: knee angle."""
 from __future__ import annotations
 
-import numpy as np
-
-from ... import geometry as g
-from ..rep_counter import RepEvent
-from .base import Exercise
+from .. import geometry as g
+from .base import Exercise, RepWindow
 
 
 class Squat(Exercise):
@@ -40,13 +37,13 @@ class Squat(Exercise):
             out["knees_forward"] = self.joint_ids(m.side, "knee", "foot")
         return out
 
-    def extreme_faults(self, event: RepEvent, frames):
+    def extreme_faults(self, w: RepWindow):
         faults = []
-        depth = np.nanmax(self.series(frames, "hip_below_knee")) if frames else -1.0
+        depth = self.peak(w.frames, "hip_below_knee", max, -1.0)
         # Deep enough if either the knee bends far enough or the hip reaches knee level.
-        if event.partial or (event.extreme > self.th["depth_max_knee"]
-                             and depth < self.th["depth_min_hip_below_knee"]):
+        if w.event.partial or (w.event.extreme > self.th["depth_max_knee"]
+                               and depth < self.th["depth_min_hip_below_knee"]):
             faults.append("not_deep")
-        if event.start_peak < self.th["lockout_min_knee"]:
+        if w.event.start_peak < self.th["lockout_min_knee"]:
             faults.append("no_lockout")
         return faults
