@@ -64,3 +64,21 @@ Choices made where the brief was ambiguous, with the reasoning.
   pull-up thresholds are hand-set defaults covered by synthetic tests (`tests/test_front_view_exercises.py`);
   after `scripts/download_data.py --only kaggle`, run `tools/extract_landmarks.py --exercise pull_up` and
   `tools/tune_thresholds.py --exercise pull_up`.
+
+## App
+- **Webcam frames are mirrored** so the live view behaves like a mirror; video files are shown as recorded.
+- **Video files play in real time** (paced to their FPS) in the app so a demo looks like a live session; the
+  analysis tools process files as fast as possible.
+- **Workout ends** when the target sets are reached, when the user presses Finish, or at the end of a video file.
+  Sessions with zero reps are not saved.
+- **User data lives in the OS app-data folder** (not the repo), so the SQLite database with personal workout
+  history can never be committed. `FORMCOACH_HOME` overrides it (used by tests and demos).
+- **Advanced threshold edits are stored as overrides** in the user's settings.json and merged over
+  `config/exercises.yaml`, so updating the repo's tuned config doesn't wipe a user's tweaks and "Reset" is trivial.
+- Theme switches apply to all Qt widgets immediately; pyqtgraph chart colours follow after a restart (kept simple).
+- **Screenshots in the README show only screens without people.** The live view would show dataset participants,
+  so it is a placeholder (brief: never commit recorded images of people).
+- **PyInstaller bundle** includes the pose model and `config/exercises.yaml`; dataset clips are not bundled (the
+  "Demo with dataset video" option is disabled in the bundle until data is downloaded next to the source tree).
+  matplotlib must stay in the bundle because `mediapipe.tasks.python.vision` imports it.
+- The voice coach drops queued phrases when speech falls behind (max 2 queued), so it never talks about an old rep.

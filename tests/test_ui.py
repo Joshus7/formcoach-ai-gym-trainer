@@ -95,3 +95,20 @@ def test_worker_reports_missing_camera(app):
     w.error.connect(errors.append)
     w.run()
     assert errors and "camera" in errors[0].lower()
+
+
+def test_worker_reports_missing_model(app, monkeypatch, tmp_path):
+    from formcoach.core import pose
+    from formcoach.ui.worker import EngineWorker, SourceSpec
+    monkeypatch.setattr(pose, "DEFAULT_MODEL", tmp_path / "missing.task")
+    import cv2
+    import numpy as np
+    vw = cv2.VideoWriter(str(tmp_path / "tiny.mp4"), cv2.VideoWriter_fourcc(*"mp4v"), 10, (64, 48))
+    for _ in range(3):
+        vw.write(np.zeros((48, 64, 3), np.uint8))
+    vw.release()
+    w = EngineWorker("push_up", load_config(), SourceSpec(kind="video", path=str(tmp_path / "tiny.mp4")))
+    errors = []
+    w.error.connect(errors.append)
+    w.run()
+    assert errors and "download_models.py" in errors[0]

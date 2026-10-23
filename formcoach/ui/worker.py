@@ -71,17 +71,23 @@ class EngineWorker(QObject):
             if spec.kind == "dataset":
                 spec.path = str(pick_dataset_clip(self.exercise))
             src = spec.camera if spec.kind == "webcam" else spec.path
-            estimator = PoseEstimator()
-            engine = WorkoutEngine(self.exercise, self.config, self.target_reps, self.target_sets,
-                                   user_id=self.user_id, source=spec.describe())
+            # Open the input first so camera/file problems are reported as such.
             with VideoSource(src, spec.width, spec.height, realtime=spec.kind != "webcam") as vs:
+                estimator = PoseEstimator()
+                engine = WorkoutEngine(self.exercise, self.config, self.target_reps, self.target_sets,
+                                       user_id=self.user_id, source=spec.describe())
                 self.source_opened.emit(spec.describe())
-                self._loop(vs, estimator, engine)
-            estimator.close()
+                try:
+                    self._loop(vs, estimator, engine)
+                finally:
+                    estimator.close()
         except ModelMissingError as exc:
             self.error.emit(str(exc))
         except SourceError as exc:
-            self.error.emit(str(exc))
+            msg = str(exc)
+            if engine is not None and engine.session.reps:
+                msg += " - the reps so far have been saved."
+            self.error.emit(msg)
         except Exception as exc:  # never let the worker die silently
             self.error.emit(f"Unexpected error: {exc}")
         finally:
