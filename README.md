@@ -104,8 +104,9 @@ python scripts/download_data.py      # dataset clips -> data/raw/ (~650 MB, re-r
 ```
 
 `download_data.py` gets the Mendeley videos through the public Mendeley API (no account needed). Pull-up clips come
-from Kaggle and need an API token: create one at <https://www.kaggle.com/settings> ("Create New Token"), then
-`mkdir -p ~/.kaggle && mv ~/Downloads/kaggle.json ~/.kaggle/ && chmod 600 ~/.kaggle/kaggle.json` and run
+from Kaggle and need an API token: generate one at <https://www.kaggle.com/settings> ("Generate New Token"), copy
+it, run `mkdir -p ~/.kaggle && pbpaste > ~/.kaggle/access_token && chmod 600 ~/.kaggle/access_token` (macOS; on other
+systems save the token text to that file - a legacy `kaggle.json` also works), then
 `python scripts/download_data.py --only kaggle`.
 
 ## How to run

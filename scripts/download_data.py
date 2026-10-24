@@ -7,7 +7,8 @@ Sources
    Downloaded through the public Mendeley API (no key needed).
 2. Kaggle "Workout/Exercises Video" (hasyimabdillah/workoutfitness-video) - used
    for pull-ups, which the Mendeley set does not contain. Needs Kaggle
-   credentials (~/.kaggle/kaggle.json or KAGGLE_USERNAME / KAGGLE_KEY).
+   credentials (~/.kaggle/access_token, ~/.kaggle/kaggle.json, KAGGLE_API_TOKEN or
+   KAGGLE_USERNAME / KAGGLE_KEY).
 
 Everything goes into data/raw/ (git-ignored). The script is re-runnable: files that
 already exist with the expected size are skipped.
@@ -159,9 +160,12 @@ def print_mendeley_manual_steps() -> None:
 
 # --------------------------------------------------------------------------- Kaggle
 def kaggle_credentials_present() -> bool:
+    if os.environ.get("KAGGLE_API_TOKEN"):
+        return True
     if os.environ.get("KAGGLE_USERNAME") and os.environ.get("KAGGLE_KEY"):
         return True
-    return (Path.home() / ".kaggle" / "kaggle.json").exists()
+    home = Path.home() / ".kaggle"
+    return (home / "access_token").exists() or (home / "kaggle.json").exists()
 
 
 def download_kaggle(max_per_folder: int | None) -> None:
@@ -174,8 +178,9 @@ def download_kaggle(max_per_folder: int | None) -> None:
     if not kaggle_credentials_present():
         print(
             "!! Kaggle credentials not found - pull-up clips skipped.\n"
-            "   1. Sign in at https://www.kaggle.com/settings -> 'API' -> 'Create New Token'\n"
-            "   2. mkdir -p ~/.kaggle && mv ~/Downloads/kaggle.json ~/.kaggle/ && chmod 600 ~/.kaggle/kaggle.json\n"
+            "   1. Sign in at https://www.kaggle.com/settings -> 'API' -> 'Generate New Token' and copy it\n"
+            "   2. mkdir -p ~/.kaggle && pbpaste > ~/.kaggle/access_token && chmod 600 ~/.kaggle/access_token\n"
+            "      (Linux/Windows: save the token text to ~/.kaggle/access_token; a legacy kaggle.json also works)\n"
             "   3. Re-run: python scripts/download_data.py --only kaggle\n"
         )
         return
