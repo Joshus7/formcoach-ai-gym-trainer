@@ -12,16 +12,16 @@ dist/
 *.spec.bak
 
 # Data, models, user content — never committed
-data/
-models/
-recordings/
+/data/
+/models/
+/recordings/
 *.mp4
 *.avi
 *.mov
 *.db
 *.sqlite
 *.sqlite3
-exports/
+/exports/
 
 # Secrets
 .env
